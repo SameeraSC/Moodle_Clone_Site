@@ -108,7 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <meta charset="UTF-8">
   <title>Lesson Upload</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- Bootstrap CSS -->
+ 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
 
@@ -210,10 +210,10 @@ function toggleInputs() {
 window.onload = toggleInputs;
 
 document.getElementById('clearUploadFormBtn').addEventListener('click', function () {
-  // 1. Clear the form
+  
   document.getElementById('lessonForm').reset();
 
-  // 2. Toggle inputs visibility after reset
+ 
   toggleInputs();
 
   const msgDiv = document.getElementById('uploadMessage');
@@ -224,7 +224,7 @@ document.getElementById('clearUploadFormBtn').addEventListener('click', function
   if (msgDiv) msgDiv.remove();
 }, 5000);
 
-  // 3. Refresh lesson list if a module is selected
+  
   const moduleCode = document.getElementById('module').value;
   if (moduleCode) {
     fetch("", {

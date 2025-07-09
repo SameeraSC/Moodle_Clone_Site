@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS lessons (
   id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
   module_code VARCHAR(10),
   lesson_number VARCHAR(10),
-  week VARCHAR(20),
+  week INT(11)NOT NULL,
   title VARCHAR(255),
   file_path VARCHAR(255),
   file_type VARCHAR(50),

@@ -4,31 +4,40 @@ require_once 'dbconn.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['selected'])) {
     $module_code = $_POST['selected'];
 
-    $stmt = $conn->prepare("SELECT week, lesson_number, title, file_type FROM lessons WHERE module_code = ? ORDER BY week ASC, lesson_number ASC");
+    $stmt = $conn->prepare("SELECT id, week, lesson_number, title, file_type FROM lessons WHERE module_code = ? ORDER BY week ASC, lesson_number ASC");
     $stmt->bind_param("s", $module_code);
     $stmt->execute();
     $result = $stmt->get_result();
 
-   $currentWeek = null;
+    $currentWeek = null;
 
-echo "<ul class='list-group'>";
+    echo "<ul class='list-group'>";
 
-while ($row = $result->fetch_assoc()) {
-    // Group by week
-    if ($currentWeek !== $row['week']) {
-        $currentWeek = $row['week'];
-        
-        echo "<li class='list-group-item active'><strong>Week {$currentWeek}</strong></li>";
-    } 
+    while ($row = $result->fetch_assoc()) {
+        if ($currentWeek !== $row['week']) {
+            $currentWeek = $row['week'];
+            echo "<li class='list-group-item active'><strong>Week {$currentWeek}</strong></li>";
+        } 
 
-    $lessonNumber = htmlspecialchars($row['lesson_number']);
-    $title = htmlspecialchars($row['title']);
-    $type = htmlspecialchars($row['file_type']);
+        $lessonNumber = htmlspecialchars($row['lesson_number']);
+        $title = htmlspecialchars($row['title']);
+        $type = htmlspecialchars($row['file_type']);
+        $week = htmlspecialchars($row['week']);
+        $id = $row['id'];
 
-    echo "<li class='list-group-item'>Lesson {$lessonNumber}: {$title} <span class='text-muted'>({$type})</span></li>";
-}
-echo "</ul>";
- exit;
+        echo "<li class='list-group-item d-flex justify-content-between align-items-center'>
+                <div>
+                    Lesson {$lessonNumber}: {$title} <span class='text-muted'>({$type})</span>
+                </div>
+                <div>
+                    
+                    <button class='btn btn-outline-danger btn-sm' onclick='deleteLessonById({$id}, \"{$module_code}\")'>Delete</button>
+                </div>
+              </li>";
+    }
+
+    echo "</ul>";
+    exit;
 }
 
 $modules = $conn->query("SELECT module_code, module_name FROM modules");
@@ -40,7 +49,6 @@ $modules = $conn->query("SELECT module_code, module_name FROM modules");
   <meta charset="UTF-8">
   <title>Lesson List View</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <style>
 html, body {
@@ -55,98 +63,82 @@ html, body {
     height: 100vh; 
     width: 100%;
 }
-    
 .div1 {
     grid-column: span 2 / span 2;
     grid-row: span 5 / span 5;
 }
-
 .div2 {
     grid-column: span 3/ span 3;
     grid-row: span 5 / span 5;
     grid-column-start: 3;
-
-    overflow-y: auto; /* enable vertical scroll */
+    overflow-y: auto; 
     padding: 1rem;
     border: 1px solid #dee2e6;  
 }
-   .dashbtn  {
-   align :left;
-
-   } 
-
 </style>
-
 </head>
 <body>
 
-
 <div class="parent">
-         
     <div class="div1">
-
-    <?php include 'lesson_upload.php';?>
+        <?php include 'lesson_upload.php';?>
+    </div>
     
-  </div>
-    
-    
-
-
-    
-           
-          
-     <div class="div2">
-            
-            <div class="container">
-             <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="div2">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center mb-3">
                 <h6 id="selected-module" class="mb-3 text-primary"></h6>
                 <a href="dashboard.php" class="btn btn-danger">Dashboard</a>
-              </div> 
-                        
-               <div class="mb-3">
-                  
-                    <?php while ($row = $modules->fetch_assoc()): ?>
-                        <option value="<?= htmlspecialchars($row['module_code']) ?>">
-                        <?= htmlspecialchars($row['module_code']) ?> - <?= htmlspecialchars($row['module_name']) ?>
-                        </option>
-                    <?php endwhile; ?>
-                   </select>
-                </div>
             </div>
+        </div>
 
-           
         <div id="output" class="mt-3 text-primary"></div>
-
-
     </div>
-
-
-    
-
-
-
+</div>
 
 <script>
 document.getElementById("module").addEventListener("change", function () {
-  var selectedOption = this.options[this.selectedIndex];
-  var selectedValue = selectedOption.value;
-  var selectedText = selectedOption.text;
+    var selectedOption = this.options[this.selectedIndex];
+    var selectedValue = selectedOption.value;
+    var selectedText = selectedOption.text;
 
-  var xhr = new XMLHttpRequest();
-  xhr.open("POST", "", true);
-  xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "", true);
+    xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 
-  xhr.onreadystatechange = function () {
-    if (xhr.readyState === 4 && xhr.status === 200) {
-      document.getElementById("output").innerHTML = xhr.responseText;
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            document.getElementById("output").innerHTML = xhr.responseText;
+            document.getElementById("selected-module").innerText = "Module: " + selectedText;
+        }
+    };
 
-      // Display module name
-      document.getElementById("selected-module").innerText = "Module: " + selectedText;
-    }
-  };
-
-  xhr.send("selected=" + encodeURIComponent(selectedValue));
+    xhr.send("selected=" + encodeURIComponent(selectedValue));
 });
+
+function deleteLessonById(id, moduleCode) {
+    if (confirm("Are you sure you want to delete this lesson?")) {
+        fetch("delete_lesson.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: "id=" + id
+        })
+        .then(res => res.text())
+        .then(response => {
+            alert(response);
+            // Reload lesson list
+            fetch("", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: "selected=" + encodeURIComponent(moduleCode)
+            })
+            .then(res => res.text())
+            .then(html => {
+                document.getElementById("output").innerHTML = html;
+            });
+        });
+    }
+}
 
 </script>
 
