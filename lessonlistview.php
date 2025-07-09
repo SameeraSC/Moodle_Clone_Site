@@ -90,16 +90,7 @@ html, body {
                 <a href="dashboard.php" class="btn btn-danger">Dashboard</a>
             </div> 
             
-            <div class="mb-3">
-                <select id="module" class="form-select">
-                    <option disabled selected>Select a module</option>
-                    <?php while ($row = $modules->fetch_assoc()): ?>
-                        <option value="<?= htmlspecialchars($row['module_code']) ?>">
-                            <?= htmlspecialchars($row['module_code']) ?> - <?= htmlspecialchars($row['module_name']) ?>
-                        </option>
-                    <?php endwhile; ?>
-                </select>
-            </div>
+          
         </div>
 
         <div id="output" class="mt-3 text-primary"></div>
