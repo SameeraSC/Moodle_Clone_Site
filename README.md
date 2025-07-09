@@ -82,8 +82,8 @@ You can:
 
 ## 👤 Author
 
-Made by: **[Sameera Perera]**  
-University: **[University of Moratuwa]**
+Made by: **Sameera Perera**  
+University: **University of Moratuwa**
 
 
 Feel free to share or improve it for personal academic use. 
