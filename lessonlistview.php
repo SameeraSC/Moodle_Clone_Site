@@ -4,7 +4,7 @@ require_once 'dbconn.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['selected'])) {
     $module_code = $_POST['selected'];
 
-    $stmt = $conn->prepare("SELECT week, lesson_number, title, file_type FROM lessons WHERE module_code = ? ORDER BY week ASC, lesson_number ASC");
+    $stmt = $conn->prepare("SELECT id, week, lesson_number, title, file_type FROM lessons WHERE module_code = ? ORDER BY week ASC, lesson_number ASC");
     $stmt->bind_param("s", $module_code);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -23,14 +23,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['selected'])) {
         $title = htmlspecialchars($row['title']);
         $type = htmlspecialchars($row['file_type']);
         $week = htmlspecialchars($row['week']);
+        $id = $row['id'];
 
         echo "<li class='list-group-item d-flex justify-content-between align-items-center'>
                 <div>
                     Lesson {$lessonNumber}: {$title} <span class='text-muted'>({$type})</span>
                 </div>
                 <div>
-                    <button class='btn btn-sm btn-warning me-1' onclick='editLesson({$lessonNumber}, {$week}, \"{$module_code}\")'>Edit</button>
-                    <button class='btn btn-sm btn-danger' onclick='deleteLesson({$lessonNumber}, {$week}, \"{$module_code}\")'>Delete</button>
+                    
+                    <button class='btn btn-outline-danger btn-sm' onclick='deleteLessonById({$id}, \"{$module_code}\")'>Delete</button>
                 </div>
               </li>";
     }
@@ -88,9 +89,7 @@ html, body {
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h6 id="selected-module" class="mb-3 text-primary"></h6>
                 <a href="dashboard.php" class="btn btn-danger">Dashboard</a>
-            </div> 
-            
-          
+            </div>
         </div>
 
         <div id="output" class="mt-3 text-primary"></div>
@@ -117,27 +116,30 @@ document.getElementById("module").addEventListener("change", function () {
     xhr.send("selected=" + encodeURIComponent(selectedValue));
 });
 
-function deleteLesson(lessonNumber, week, moduleCode) {
+function deleteLessonById(id, moduleCode) {
     if (confirm("Are you sure you want to delete this lesson?")) {
-        var xhr = new XMLHttpRequest();
-        xhr.open("POST", "delete_lesson.php", true);
-        xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-
-        xhr.onload = function () {
-            if (xhr.status === 200) {
-                alert(xhr.responseText);
-                document.getElementById("module").dispatchEvent(new Event("change"));
-            }
-        };
-
-        xhr.send("lesson_number=" + lessonNumber + "&week=" + week + "&module_code=" + encodeURIComponent(moduleCode));
+        fetch("delete_lesson.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: "id=" + id
+        })
+        .then(res => res.text())
+        .then(response => {
+            alert(response);
+            // Reload lesson list
+            fetch("", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: "selected=" + encodeURIComponent(moduleCode)
+            })
+            .then(res => res.text())
+            .then(html => {
+                document.getElementById("output").innerHTML = html;
+            });
+        });
     }
 }
 
-function editLesson(lessonNumber, week, moduleCode) {
-    
-    window.location.href = "edit_lesson.php?lesson_number=" + lessonNumber + "&week=" + week + "&module_code=" + encodeURIComponent(moduleCode);
-}
 </script>
 
 </body>

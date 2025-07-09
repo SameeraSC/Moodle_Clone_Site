@@ -2,21 +2,43 @@
 require_once 'dbconn.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $lesson_number = $_POST['lesson_number'] ?? null;
-    $week = $_POST['week'] ?? null;
-    $module_code = $_POST['module_code'] ?? null;
+    $id = $_POST['id'] ?? null;
 
-    if ($lesson_number !== null && $week !== null && $module_code !== null) {
-        $stmt = $conn->prepare("DELETE FROM lessons WHERE lesson_number = ? AND week = ? AND module_code = ?");
-        $stmt->bind_param("iis", $lesson_number, $week, $module_code);
+    if ($id !== null && is_numeric($id)) {
+       
+        $stmt = $conn->prepare("SELECT file_path, file_type FROM lessons WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $stmt->bind_result($file_path, $file_type);
+        $stmt->fetch();
+        $stmt->close();
 
-        if ($stmt->execute()) {
+        
+        if ($file_path && $file_type !== 'Ylink' && $file_type !== 'Wlink') {
+            $full_path = __DIR__ . '/' . $file_path;
+
+            if (file_exists($full_path)) {
+                unlink($full_path); 
+            }
+        }
+
+        //delete the database record
+        $stmt = $conn->prepare("DELETE FROM lessons WHERE id = ?");
+        $stmt->bind_param("i", $id);
+
+        if ($stmt->execute() && $stmt->affected_rows > 0) {
             echo "Lesson deleted successfully.";
         } else {
             echo "Error deleting lesson.";
         }
+
+        $stmt->close();
     } else {
-        echo "Invalid data received.";
+        echo "Invalid lesson ID.";
     }
+} else {
+    echo "Invalid request.";
 }
 ?>
+
+
